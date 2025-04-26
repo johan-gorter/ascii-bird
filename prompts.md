@@ -16,3 +16,32 @@ Maak een flappy bird webapplicatie op de volgende manier:
 - Er is een bird module die de vogel sprite tekent en de zwaartekracht toepast en de opwaardse snelheid constant houdt als de flyButton is ingedrukt
 - Er is een gameloop module die frame events genereert zolang het nog geen gameover is. Het rendert gameover op de canvas als het game over is. Dan wacht de gameloop module op een klik event en stuurt dan een reset event.
 ---
+
+ASCII bird is a "flappy bird" game that has an ultra modular application architecture.
+Modules are ES6 javascript files and look as follows:
+
+```js
+// big-coin.js
+// Adds one big coin on each segment at a random location
+
+import {on, emit} from './bus.js'
+import {WORLD_HEIGHT} from './constants.js'
+
+const RADIUS = 30;
+
+on('prepareSegment', (evt) => {
+  let top = evt.builder.rng.nextInt(RADIUS / 2, WORLD_HEIGHT - RADIUS / 2);
+  let left = evt.builder.rng.nextInt(evt.segmentStartX, evt.segmentEndX - RADIUS);
+  if (evt.builder.reserveSpace(top, left, RADIUS, RADIUS)) {
+    gameObjects.add({
+      name: 'big-coin', // for debug purposes
+      draw(canvas, worldOffsetX) {
+
+      },
+      gameTick() {
+        
+      }
+    });
+  }
+});
+```
