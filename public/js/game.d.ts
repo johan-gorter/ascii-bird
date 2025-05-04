@@ -1,23 +1,66 @@
-export interface InitEvent             { type: 'init'; }
+/**
+ * Allows modules to setup and load game assets.
+ */
+export interface InitEvent {
+  type: "init";
+  waitFor(promise: Promise<void>): void;
+}
 
-export interface PrepareSegmentEvent   {
-  type: 'prepareSegment';
+/**
+ * Emitted when a new part of the game world needs to be created.
+ */
+export interface PrepareSegmentEvent {
+  type: "prepareSegment";
   segmentStartX: number;
   segmentEndX: number;
   builder: SegmentBuilder;
 }
 
-export interface CollisionDetectedEvent{ type: 'collisionDetected'; }
+/**
+ * Emitted when the bird collided with an obstacle. Should be picked up by a gameplay module to subtract a life or emit game over.
+ */
+export interface CollisionDetectedEvent {
+  type: "collisionDetected";
+  collisionObject: GameObject;
+}
 
-export interface GameOverEvent         { type: 'gameOver'; }
+export interface GameOverEvent {
+  type: "gameOver";
+}
 
-export interface PausedEvent           { type: 'paused'; }
+export interface PausedEvent {
+  type: "paused";
+}
 
-export interface UnpausedEvent         { type: 'unpaused'; }
+export interface UnpausedEvent {
+  type: "unpaused";
+}
 
-export interface ScoreChangedEvent     { type: 'scoreChanged'; score: number; }
+export interface ScoreChangedEvent {
+  type: "scoreChanged";
+  score: number;
+}
 
-export interface ResetEvent            { type: 'reset'; }
+export interface ResetEvent {
+  type: "reset";
+}
+
+/**
+ * Is drawn every frame, before the game objects are drawn.
+ */
+export interface DrawBackgroundEvent {
+  type: "drawBackground";
+  ctx: CanvasRenderingContext2D;
+  viewportX: number;
+}
+
+/**
+ * Is drawn every frame, after the game objects are drawn, can be used to print static UI elements like buttons and scores.
+ */
+export interface DrawStaticUIEvent {
+  type: "drawStaticUI";
+  ctx: CanvasRenderingContext2D;
+}
 
 /** Union of every event your module can observe / emit. */
 export type GameEvent =
@@ -28,35 +71,50 @@ export type GameEvent =
   | PausedEvent
   | UnpausedEvent
   | ScoreChangedEvent
-  | ResetEvent;
+  | ResetEvent
+  | DrawBackgroundEvent
+  | DrawStaticUIEvent;
 
 /**
  * Event bus that allows modules to communicate with each other.
  */
 export const bus: {
   on<E extends GameEvent>(
-    type: E['type'],
+    type: E["type"],
     handler: (evt: E) => void
   ): () => void;
 
-  off<E extends GameEvent>(
-    type: E['type'],
-    handler: (evt: E) => void
-  ): void;
+  off<E extends GameEvent>(type: E["type"], handler: (evt: E) => void): void;
 
   emit<E extends GameEvent>(evt: E): void;
 };
 
-/* -------------------------------------------------------------
-   3.  Game‑objects registry
-----------------------------------------------------------------*/
+
+/**
+ * Game object that can be added to the game world.
+ * It can be a bird, a pipe, or any other object.
+ */
 export interface GameObject {
   /**
-   * Just for debugging.
+   * String value for identification and game logic.
    */
-  name: string;
+  type: string;
+  
+  /**
+   * Signals that the game has progressed. Can be used to apply physics, detect collisions and update game state.
+   * @param dt Delta time in milliseconds since the last tick.
+   */
   gameTick?(dt: number): void;
+
+  /**
+   * Draws the game object on the canvas.
+   * @param viewportX The x position of the viewport.
+   */
   draw?(ctx: CanvasRenderingContext2D, viewportX: number): void;
+
+  /**
+   * The `autoRemoveAt` property indicates the viewportX at which the object should be automatically removed from the game.
+   */
   autoRemoveAt?: number;
 }
 
@@ -72,10 +130,11 @@ export interface GameObjectSet extends Iterable<GameObject> {
 export const gameObjects: GameObjectSet;
 
 export interface BirdState {
+  /** x position in the game coordinate system */
   x: number;
   y: number;
   vy: number;
-  hitMap: boolean[][];
+  hitMap: HitMap;
 }
 
 export interface GameState {
@@ -89,7 +148,7 @@ export interface GameState {
 
 export const gameState: GameState;
 
-export const VIEWPORT_WIDTH  = 800;
+export const VIEWPORT_WIDTH = 800;
 export const VIEWPORT_HEIGHT = 450;
 export const WORLD_HEIGHT; // = VIEWPORT_HEIGHT;
 
@@ -116,13 +175,16 @@ export interface Helpers {
 
 export const helpers: Helpers;
 
+/**
+ * Produces a deterministic pseudo‑random number in the range [minInclusive, maxInclusive].
+ */
 export interface RNG {
   nextInt(minInclusive: number, maxInclusive: number): number;
 }
 
 export interface SegmentBuilder {
   rng: RNG;
-  reserveSpace(x: number, y: number, w: number, h: number): boolean;
+  reserveSpace(x: number, y: number, width: number, height: number): boolean;
 }
 
 export const TICK_HZ = 200;
