@@ -24,6 +24,19 @@ export interface CollisionDetectedEvent {
   collisionObject: GameObject;
 }
 
+/**
+ * Emitted when the user interacts with the game. This can be a touch, a mouse click or a key press.
+ */
+export interface InputChangedEvent {
+  type: "inputChanged";
+  /** Returns the default Gamepad if connected */
+  gamepad: Gamepad | null;
+  /** Lists the keys on the keyboard being pressed. Uses `KeyboardEvent.code` */
+  keysDown: Set<string>;
+  /** Lists the touches on the area specified. Touches can be a finger or a mouse whith button1 pressed **/
+  getTouchesInArea(x: number, y: number, width: number, height: number): {x: number, y: number}[];
+}
+
 export interface GameOverEvent {
   type: "gameOver";
 }
@@ -67,6 +80,7 @@ export type GameEvent =
   | InitEvent
   | PrepareSegmentEvent
   | CollisionDetectedEvent
+  | InputChangedEvent
   | GameOverEvent
   | PausedEvent
   | UnpausedEvent
@@ -99,7 +113,7 @@ export interface GameObject {
    * String value for identification and game logic.
    */
   type: string;
-  
+
   /**
    * Signals that the game has progressed. Can be used to apply physics, detect collisions and update game state.
    * @param dt Delta time in milliseconds since the last tick.
@@ -166,7 +180,7 @@ export interface HitMap {
 
 export interface Helpers {
   charToCanvas(char: string, sizePx: number): HTMLCanvasElement;
-  canvasToHitMap(canvas: HTMLCanvasElement): boolean[][];
+  canvasToHitMap(canvas: HTMLCanvasElement): HitMap;
   detectCollision(
     a: { x: number; y: number; hitMap: HitMap },
     b: { x: number; y: number; hitMap: HitMap }
