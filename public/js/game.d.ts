@@ -93,6 +93,11 @@ export type GameEvent =
  * Event bus that allows modules to communicate with each other.
  */
 export const bus: {
+  on<T extends GameEvent['type']>(
+    type: T,
+    handler: (evt: Extract<GameEvent, { type: T }>) => void
+  ): () => void;
+
   on<E extends GameEvent>(
     type: E["type"],
     handler: (evt: E) => void

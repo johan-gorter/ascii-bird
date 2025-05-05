@@ -18,8 +18,12 @@ on('prepareSegment', (evt) => {
   // Reserve space: (x, y, width, height)
   if (evt.builder.reserveSpace(x, y, RADIUS * 2, RADIUS * 2)) {
     const bigCoinGameObject = {
-      name: 'big-coin',
+      type: 'big-coin',
 
+      /**
+       * @param {CanvasRenderingContext2D} ctx
+       * @param {number} viewportX
+       */
       draw(ctx, viewportX) {
         ctx.drawImage(coinCanvas, x - viewportX, y);
       },
@@ -31,8 +35,8 @@ on('prepareSegment', (evt) => {
             gameState.bird
           )
         ) {
-          emit('scoreChanged', { score: 1000 });
-          gameObjects.remove(bigCoinGameObject);
+          emit({ type: 'scoreChanged', score: 1000 });
+          gameObjects.delete(bigCoinGameObject);
         }
       },
 
