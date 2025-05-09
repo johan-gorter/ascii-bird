@@ -5,16 +5,28 @@ import { bus, gameState, WORLD_HEIGHT, helpers, gameObjects } from "./game.js";
  */
 
 const BIRD_SIZE = 40;
-const GRAVITY = 0.5; // pixels per millisecond^2
-const FLY_UPWARD_FORCE = 1.5; // pixels per millisecond^2
+const GRAVITY = 0.0002; // pixels per millisecond^2
+const FLY_UPWARD_FORCE = 0.0006; // pixels per millisecond^2
 
-const INITIAL_SPEED_X = 1; // pixels per millisecond
+const INITIAL_SPEED_X = 0.2; // pixels per millisecond
 const INITIAL_BIRD_X = 50;
 const VIEWPORT_BIRD_X = 50;
 const INITIAL_BIRD_Y = WORLD_HEIGHT / 2 - BIRD_SIZE / 2;
 
 const birdCanvas = helpers.charToCanvas("🐦", BIRD_SIZE);
-const birdHitMap = helpers.canvasToHitMap(birdCanvas);
+
+// Flip the bird canvas horizontally
+const flippedBirdCanvas = document.createElement('canvas');
+flippedBirdCanvas.width = birdCanvas.width;
+flippedBirdCanvas.height = birdCanvas.height;
+const ctx = flippedBirdCanvas.getContext('2d');
+if (ctx) {
+  ctx.translate(birdCanvas.width, 0);
+  ctx.scale(-1, 1);
+  ctx.drawImage(birdCanvas, 0, 0);
+}
+
+const birdHitMap = helpers.canvasToHitMap(flippedBirdCanvas);
 
 let x = INITIAL_BIRD_X;
 let y = INITIAL_BIRD_Y;
@@ -25,7 +37,7 @@ let speedy = 0;
 let gameObject = {
   type: "bird",
   draw(ctx, viewportX) {
-    ctx.drawImage(birdCanvas, x - viewportX, y);
+    ctx.drawImage(flippedBirdCanvas, x - viewportX, y);
   },
   gameTick(dt) {
     // apply physics to the bird
