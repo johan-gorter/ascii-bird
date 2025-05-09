@@ -5,3 +5,5 @@ Roadmap:
 - Make it work
 - Reload when regaining focus, preserving state
 - Investigate assets
+
+- conform to more AI-opinionated standards (indent by 4 spaces, camelCase files)

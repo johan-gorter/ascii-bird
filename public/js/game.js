@@ -317,6 +317,36 @@ export async function initGame(canvasElement, window) {
       alert("Initialization error: " + error.message);
     });
 
+  bus.on("stateChanged", (evt) => {
+    if (
+      (gameState.state === "playing" || gameState.state === "demoing") &&
+      gameLoopIntervalId === null
+    ) {
+      // Start the game loop if it's not already running
+      gameLoopIntervalId = setInterval(gameTick, TICK_DT_MS);
+      console.log("Game loop started due to state change.");
+    } else if (
+      !(gameState.state === "playing" || gameState.state === "demoing") &&
+      gameLoopIntervalId !== null
+    ) {
+      // Stop the game loop if it's running and state is not playing/demoing
+      clearInterval(gameLoopIntervalId);
+      gameLoopIntervalId = null;
+      console.log("Game loop stopped due to state change.");
+    }
+  });
+
+  setupInputHandling(canvas, window); // Note: also fires first inputChanged event
+
+  window.dev = {bus, gameState}; // For debugging purposes
+}
+
+/**
+ * Setup input handling for the game.
+ * @param {HTMLCanvasElement} canvas
+ * @param {Window} window
+ */
+function setupInputHandling(canvas, window) {
   // --- Input Handling Setup ---
   const keysDown = new Set(); // Stores KeyboardEvent.code for pressed keys
   const currentTouches = new Map(); // identifier -> {x, y}, stores active finger and mouse touches
