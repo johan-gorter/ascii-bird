@@ -4,7 +4,8 @@ It shows a canvas where users can play a "flappy bird" kind of game.
 - We use ES2022 Javascript modules
 - The code is extremely split up into modules
 - All modules depend on game.js, described by [this typescript definition](../public/js/game.d.ts)
-- There is a central event bus that modules use to communicate.
+- There is a central event bus that modules use to communicate and a shared gameState object.
+- Modules are responsible for changing gameState and emitting events on the bus afterwards if other modules can respond.
 - The architecture is optimized for readability and maintainability, not performance.
 - The world is infinitely long and 450 pixels high.
 - The viewport/canvas is 800 pixels wide and 450 pixels high. The gameState.viewportX tells what part of the world is currently visible.

@@ -2,5 +2,6 @@ Ascii bird is meant to be a demonstration of how far people without programming 
 
 Roadmap:
 
-Clean architecture
-- 
+- Make it work
+- Reload when regaining focus, preserving state
+- Investigate assets

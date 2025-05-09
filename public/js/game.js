@@ -58,8 +58,7 @@ export const gameState = {
   viewportX: 0,
   score: 0,
   flyButtonPressed: false,
-  paused: false,
-  gameOver: false,
+  state: "playing",
   bird: undefined,
 };
 
@@ -157,8 +156,7 @@ export const helpers = {
   detectCollision,
 };
 
-const VIEWPORT_SPEED_PIXELS_PER_SECOND = 100; // Pixels the viewport scrolls per second
-const SEGMENT_WIDTH = VIEWPORT_WIDTH; // How much of the world to generate at once
+const SEGMENT_WIDTH = 3000; // How much of the world to generate at once
 
 // --- Game Engine State ---
 /** @type {number | null} */
@@ -218,30 +216,11 @@ class BasicSegmentBuilder {
   }
 }
 
-function gameTickLoop() {
-  if (gameState.paused || gameState.gameOver) {
-    return;
-  }
-
-  // Update viewport position
-  const viewportDeltaX = (VIEWPORT_SPEED_PIXELS_PER_SECOND / 1000) * TICK_DT_MS;
-  gameState.viewportX += viewportDeltaX;
-
-  // Emit gameTick to all objects
-  for (const obj of gameObjects) {
-    obj.gameTick?.(TICK_DT_MS);
-  }
-
-  // Auto-remove objects that are off-screen
-  for (const obj of gameObjects) {
-    if (
-      obj.autoRemoveAt !== undefined &&
-      obj.autoRemoveAt < gameState.viewportX
-    ) {
-      gameObjects.delete(obj);
-    }
-  }
-
+/**
+ * gameTicks are only called when the game is not paused.
+ * This means the world stops when the game is paused.
+ */
+function gameTick() {
   // Generate new world segments if needed
   const viewportEndX = gameState.viewportX + VIEWPORT_WIDTH;
   if (viewportEndX > worldGeneratedUpToX - SEGMENT_WIDTH) {
@@ -258,8 +237,27 @@ function gameTickLoop() {
     });
     worldGeneratedUpToX = segmentEndX;
   }
+
+  // Emit gameTick to all objects
+  for (const obj of gameObjects) {
+    obj.gameTick?.(TICK_DT_MS);
+  }
+
+  // Auto-remove objects that are now off-screen
+  for (const obj of gameObjects) {
+    if (
+      obj.autoRemoveAt !== undefined &&
+      obj.autoRemoveAt < gameState.viewportX
+    ) {
+      gameObjects.delete(obj);
+    }
+  }
 }
 
+/**
+ * The loop that keeps updating the canvas every animation frame.
+ * This never stops. Throttling is assumed to be done by the browser.
+ */
 function drawLoop() {
   if (!ctx || !canvas) return; // Should not happen if initialized
 
@@ -284,8 +282,9 @@ function drawLoop() {
 /**
  * Initializes the game engine and starts the loops.
  * @param {HTMLCanvasElement} canvasElement
+ * @param {Window} window
  */
-export function initGame(canvasElement) {
+export async function initGame(canvasElement, window) {
   canvas = canvasElement;
   ctx = canvas.getContext("2d");
   if (!ctx) {
@@ -294,75 +293,174 @@ export function initGame(canvasElement) {
   canvas.width = VIEWPORT_WIDTH;
   canvas.height = VIEWPORT_HEIGHT;
 
-  // Reset state before starting
-  resetGame();
-  gameState.paused = false; // Unpause after init
-
-  // Start loops
-  if (gameLoopIntervalId === null) {
-    gameLoopIntervalId = setInterval(gameTickLoop, TICK_DT_MS);
-  }
-  if (animationFrameId === null) {
-    animationFrameId = requestAnimationFrame(drawLoop);
-  }
+  animationFrameId = requestAnimationFrame(drawLoop);
 
   console.log("Game initialized and loops started.");
-}
 
-export function pauseGame() {
-  if (!gameState.paused) {
-    gameState.paused = true;
-    bus.emit({ type: "paused" });
-    console.log("Game paused.");
-  }
-}
-
-export function resumeGame() {
-  if (gameState.paused && !gameState.gameOver) {
-    gameState.paused = false;
-    bus.emit({ type: "unpaused" });
-    console.log("Game resumed.");
-  }
-}
-
-export function resetGame() {
-  console.log("Resetting game...");
-  // Clear existing objects
-  for (const obj of gameObjects) {
-    gameObjects.delete(obj);
-  }
-
-  // Reset game state
-  gameState.viewportX = 0;
-  gameState.score = 0;
-  gameState.flyButtonPressed = false;
-  gameState.paused = true; // Start paused until explicitly resumed or started
-  gameState.gameOver = false;
-  // Bird state reset should be handled by the bird module listening to 'reset'
-
-  worldGeneratedUpToX = 0; // Reset world generation
-
-  // Emit reset event for modules to clean up and re-initialize
-  bus.emit({ type: "reset" });
-
-  // Ensure initial segment is generated immediately on next tick after resume
-  const builder = new BasicSegmentBuilder(0);
+  // Emit init event and allow modules to perform async setup
+  const initPromises = [];
   bus.emit({
-    type: "prepareSegment",
-    segmentStartX: 0,
-    segmentEndX: SEGMENT_WIDTH,
-    builder,
+    type: "init",
+    waitFor: (promise) => {
+      initPromises.push(promise);
+    },
   });
-  worldGeneratedUpToX = SEGMENT_WIDTH;
 
-  console.log("Game reset complete.");
+  await Promise.all(initPromises)
+    .then(() => {
+      console.log("All init promises resolved.");
+      gameTick(); // The first tick should generate the first segment
+      gameLoopIntervalId = setInterval(gameTick, TICK_DT_MS);
+    })
+    .catch((error) => {
+      console.error("Error during init:", error);
+      alert("Initialization error: " + error.message);
+    });
+
+  // --- Input Handling Setup ---
+  const keysDown = new Set(); // Stores KeyboardEvent.code for pressed keys
+  const currentTouches = new Map(); // identifier -> {x, y}, stores active finger and mouse touches
+
+  // Helper to get canvas-relative coordinates for mouse events
+  function getMousePosition(event) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+    };
+  }
+
+  // Helper to get canvas-relative coordinates for touch events
+  function getTouchPosition(touch) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: touch.clientX - rect.left,
+      y: touch.clientY - rect.top,
+    };
+  }
+
+  function emitInputChanged() {
+    const gamepad = navigator.getGamepads
+      ? navigator.getGamepads()[0] || null
+      : null;
+
+    bus.emit({
+      type: "inputChanged",
+      gamepad: gamepad,
+      keysDown: new Set(keysDown), // Pass a copy to prevent external modification
+      getTouchesInArea(rectX, rectY, rectWidth, rectHeight) {
+        const touchesInArea = [];
+        // Iterate over a copy of values if modification during iteration is a concern
+        for (const touch of currentTouches.values()) {
+          if (
+            touch.x >= rectX &&
+            touch.x <= rectX + rectWidth &&
+            touch.y >= rectY &&
+            touch.y <= rectY + rectHeight
+          ) {
+            touchesInArea.push({ x: touch.x, y: touch.y });
+          }
+        }
+        return touchesInArea;
+      },
+    });
+  }
+
+  // Keyboard event listeners on window
+  window.addEventListener("keydown", (event) => {
+    if (event.repeat) return; // Optional: ignore auto-repeated keydown events if not desired
+    keysDown.add(event.code);
+    emitInputChanged();
+  });
+
+  window.addEventListener("keyup", (event) => {
+    keysDown.delete(event.code);
+    emitInputChanged();
+  });
+
+  // Touch event listeners on canvas
+  canvas.addEventListener(
+    "touchstart",
+    (event) => {
+      event.preventDefault();
+      for (const touch of event.changedTouches) {
+        currentTouches.set(touch.identifier, getTouchPosition(touch));
+      }
+      emitInputChanged();
+    },
+    { passive: false }
+  );
+
+  canvas.addEventListener(
+    "touchmove",
+    (event) => {
+      event.preventDefault();
+      for (const touch of event.changedTouches) {
+        if (currentTouches.has(touch.identifier)) {
+          currentTouches.set(touch.identifier, getTouchPosition(touch));
+        }
+      }
+      emitInputChanged();
+    },
+    { passive: false }
+  );
+
+  const handleTouchEndOrCancel = (event) => {
+    event.preventDefault();
+    for (const touch of event.changedTouches) {
+      currentTouches.delete(touch.identifier);
+    }
+    emitInputChanged();
+  };
+  canvas.addEventListener("touchend", handleTouchEndOrCancel, {
+    passive: false,
+  });
+  canvas.addEventListener("touchcancel", handleTouchEndOrCancel, {
+    passive: false,
+  });
+
+  // Mouse event listeners on canvas (simulating a touch with button 1 / primary button)
+  let isMouseButton1Down = false;
+  const MOUSE_TOUCH_ID = "mouse_button1";
+
+  canvas.addEventListener("mousedown", (event) => {
+    if (event.button === 0) {
+      // Primary button (usually left, considered "button 1" conceptually)
+      isMouseButton1Down = true;
+      currentTouches.set(MOUSE_TOUCH_ID, getMousePosition(event));
+      emitInputChanged();
+    }
+  });
+
+  canvas.addEventListener("mousemove", (event) => {
+    if (isMouseButton1Down) {
+      currentTouches.set(MOUSE_TOUCH_ID, getMousePosition(event));
+      emitInputChanged();
+    }
+  });
+
+  const handleMouseUpOrLeave = (event) => {
+    // For mouseup, only act if it's the primary button
+    if (event.type === "mouseup" && event.button !== 0) {
+      return;
+    }
+    if (isMouseButton1Down) {
+      isMouseButton1Down = false;
+      currentTouches.delete(MOUSE_TOUCH_ID);
+      emitInputChanged();
+    }
+  };
+  canvas.addEventListener("mouseup", handleMouseUpOrLeave);
+  canvas.addEventListener("mouseleave", handleMouseUpOrLeave); // Clear if mouse leaves canvas while pressed
+
+  // Gamepad connection/disconnection events to trigger an inputChanged event
+  window.addEventListener("gamepadconnected", () => {
+    emitInputChanged();
+  });
+  window.addEventListener("gamepaddisconnected", () => {
+    emitInputChanged();
+  });
+
+  // Emit an initial input state.
+  emitInputChanged();
 }
-
-// Stop loops when game is over
-bus.on("gameOver", () => {
-  gameState.gameOver = true;
-  gameState.paused = true; // Also pause on game over
-  console.log("Game Over detected, stopping loops.");
-  // Note: Loops aren't actually stopped here, but gameTickLoop won't run logic.
-  // Consider explicitly clearing intervals/frames if needed, e.g., in resetGame or a dedicated stopGame function.
-});

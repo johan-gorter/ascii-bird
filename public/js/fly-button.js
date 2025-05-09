@@ -63,3 +63,12 @@ bus.on("drawStaticUI", (evt) => {
     ctx.drawImage(unpressedButtonCanvas, BUTTON_X, BUTTON_Y);
   }
 });
+
+bus.on("inputChanged", (evt) => {
+  const spacePressed = evt.keysDown.has("Space");
+  const gamepadButtonPressed = evt.gamepad?.buttons[0]?.pressed ?? false;
+  const touchesInButtonArea = evt.getTouchesInArea(BUTTON_X, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT);
+  const mouseOrTouchPressed = touchesInButtonArea.length > 0;
+
+  gameState.flyButtonPressed = spacePressed || gamepadButtonPressed || mouseOrTouchPressed;
+});

@@ -37,25 +37,11 @@ export interface InputChangedEvent {
   getTouchesInArea(x: number, y: number, width: number, height: number): {x: number, y: number}[];
 }
 
-export interface GameOverEvent {
-  type: "gameOver";
-}
-
-export interface PausedEvent {
-  type: "paused";
-}
-
-export interface UnpausedEvent {
-  type: "unpaused";
-}
-
-export interface ScoreChangedEvent {
-  type: "scoreChanged";
-  score: number;
-}
-
-export interface ResetEvent {
-  type: "reset";
+/**
+ * Signals that gameState.state has changed
+ */
+export interface StateChangedEvent {
+  type: "stateChanged";
 }
 
 /**
@@ -155,12 +141,14 @@ export interface BirdState {
   hitMap: HitMap;
 }
 
+/**
+ * The game state is a global object that contains the current state of the game.
+ * More things like score, lives, etc. can be added here when expanding the game.
+ */
 export interface GameState {
   viewportX: number;
-  score: number;
   flyButtonPressed: boolean;
-  paused: boolean;
-  gameOver: boolean;
+  state: "playing" | "gameOver" | "paused" | "demoing";
   bird: BirdState;
 }
 
