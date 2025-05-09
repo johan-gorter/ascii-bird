@@ -21,7 +21,7 @@ export interface PrepareSegmentEvent {
  */
 export interface CollisionDetectedEvent {
   type: "collisionDetected";
-  collisionObject: GameObject;
+  collisionObject?: GameObject;
 }
 
 /**
@@ -149,10 +149,9 @@ export interface GameObjectSet extends Iterable<GameObject> {
 export const gameObjects: GameObjectSet;
 
 export interface BirdState {
-  /** x position in the game coordinate system */
+  /** x position in the world coordinate system */
   x: number;
   y: number;
-  vy: number;
   hitMap: HitMap;
 }
 

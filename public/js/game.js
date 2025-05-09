@@ -18,23 +18,12 @@ export const bus = {
    * @template {GameEvent} E
    * @param {E['type']} type
    * @param {(evt: E) => void} handler
-   * @returns {() => void} Unsubscribe function
    */
   on(type, handler) {
     if (!listeners.has(type)) {
       listeners.set(type, new Set());
     }
-    listeners.get(type)?.add(handler);
-    return () => bus.off(type, handler);
-  },
-
-  /**
-   * @template {GameEvent} E
-   * @param {E['type']} type
-   * @param {(evt: E) => void} handler
-   */
-  off(type, handler) {
-    listeners.get(type)?.delete(handler);
+    listeners.get(type).add(handler);
   },
 
   /**
