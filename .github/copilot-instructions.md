@@ -13,7 +13,7 @@ It shows a canvas where users can play a "flappy bird" kind of game.
 - All modules can register to prepareSegment events to add game objects to the game.
 - When the game is running (not paused or game over), all registered game objects receive gameTick callbacks. Here they can apply physics, collect detections and do logic.
 - On requestAnimationFrame, all registered game objects receive draw callbacks. Here they can draw themselves on the canvas.
-- Game objects can be created from simple ASCII characters like 🐦, ✈️, 🚁, 🏢, 🛰️, 🪚, ⚙️, ⏸️
+- Game objects can be created from simple ASCII characters like 🐦, ✈️, 🚁, 🏢, 🛰️, 🪚, ⚙️, 🚧, ⏸️
 
 Example code for a big coin that shows up in every segment:
 

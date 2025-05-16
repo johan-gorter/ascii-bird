@@ -15,7 +15,7 @@ bus.on("unpaused", () => {
   }
 });
 
-// Example of handling collision for game over - can be expanded
+// Handling collisions - can be expanded
 bus.on("collisionDetected", () => {
   if (gameState.state === "playing") {
     gameState.state = "gameOver";

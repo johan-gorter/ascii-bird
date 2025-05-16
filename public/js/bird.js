@@ -33,6 +33,12 @@ let y = INITIAL_BIRD_Y;
 let speedx = INITIAL_SPEED_X;
 let speedy = 0;
 
+function updateGameState() {
+  gameState.bird.x = Math.floor(x);
+  gameState.bird.y = Math.floor(y);
+  gameState.viewportX = gameState.bird.x - VIEWPORT_BIRD_X;
+}
+
 /** @type {GameObject} */
 let gameObject = {
   type: "bird",
@@ -57,12 +63,22 @@ let gameObject = {
     }
 
     // change the position of the viewport and bird by whole pixels
-    gameState.bird.x = Math.floor(x);
-    gameState.bird.y = Math.floor(y);
-    gameState.viewportX = gameState.bird.x - VIEWPORT_BIRD_X;
+    updateGameState();
   },
 };
 
-gameObjects.add(gameObject);
+bus.on("init", () => {
+  gameState.bird = { x: INITIAL_BIRD_X, y: INITIAL_BIRD_Y, hitMap: birdHitMap };
+  gameObjects.add(gameObject);
+  updateGameState();
+});
+
+bus.on("reset", () => {
+  x = INITIAL_BIRD_X;
+  y = INITIAL_BIRD_Y;
+  speedx = INITIAL_SPEED_X;
+  speedy = 0;
+  updateGameState();
+});
 
 gameState.bird = { x: INITIAL_BIRD_X, y: INITIAL_BIRD_Y, hitMap: birdHitMap };

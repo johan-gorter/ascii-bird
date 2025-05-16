@@ -70,5 +70,5 @@ bus.on("inputChanged", (evt) => {
   const touchesInButtonArea = evt.getTouchesInArea(BUTTON_X, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT);
   const mouseOrTouchPressed = touchesInButtonArea.length > 0;
 
-  gameState.flyButtonPressed = spacePressed || gamepadButtonPressed || mouseOrTouchPressed;
+  gameState.flyButtonPressed = gameState.state === "playing" && (spacePressed || gamepadButtonPressed || mouseOrTouchPressed);
 });

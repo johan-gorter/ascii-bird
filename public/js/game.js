@@ -336,6 +336,26 @@ export async function initGame(canvasElement, window) {
     }
   });
 
+  bus.on("reset", () => {
+    // Reset game state and world
+    gameState.viewportX = 0;
+    gameState.flyButtonPressed = false;
+    gameState.state = "playing";
+    // Clear all game objects
+    for (const obj of Array.from(gameObjects)) {
+      if (obj.type !== "bird") {
+        // Only remove objects that are not the bird
+        gameObjects.delete(obj);
+      }
+    }
+    // Reset world generation
+    worldGeneratedUpToX = 0;
+    // Generate the first segment again
+    gameTick();
+    // Notify modules that state changed (and starts the gameloop again)
+    bus.emit({ type: "stateChanged" });
+  });
+
   setupInputHandling(canvas, window); // Note: also fires first inputChanged event
 
   window.dev = {bus, gameState}; // For debugging purposes

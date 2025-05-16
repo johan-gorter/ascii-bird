@@ -62,17 +62,11 @@ bus.on('inputChanged', (evt) => {
 
     if (anyKeyPressed || anyTouch || anyGamepadButtonPressed) {
       // Reset game state
-      gameState.viewportX = 0;
       bus.emit({ type: 'reset' });
-
-      // Change state to playing (or an initial state like 'demoing' if preferred)
-      gameState.state = 'playing';
-      bus.emit({ type: 'stateChanged' });
 
       // Deactivate game over sequence for this instance
       isGameOverSequenceActive = false;
       isAnimationComplete = false; // Reset for the next game over
-      // textCurrentY will be reset by the 'stateChanged' handler if another 'gameOver' occurs
     }
   }
 });

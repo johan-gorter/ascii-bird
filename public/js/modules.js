@@ -1,15 +1,24 @@
-// Core modules
-await import('./bird.js');
-await import('./game-manager.js')
+await Promise.all([
+  // Core modules
+  importWithErrorHandling("./bird.js"), // emits collisionDetected when bird hits ground or ceiling
+  importWithErrorHandling("./game-manager.js"), // handles paused, unpaused and collisionDetected events, emits gameOver
 
-// UI modules
-await import('./fly-button.js');
-await import('./pause-button.js');
-await import('./gameOver.js');
+  // UI modules
+  importWithErrorHandling("./fly-button.js"), // handles inputChanged, changes gameState.flyButtonPressed
+  importWithErrorHandling("./pause-button.js"), // emits paused and unpaused
+  importWithErrorHandling("./gameOver.js"), // handles stateChanged when gameState.state is gameOver
 
-// Obstacles
+  // Obstacles
 
-// Power-ups
-await import('./big-coin.js');
+  // Power-ups
+  importWithErrorHandling("./big-coin.js"),
+]);
 
-export {}
+function importWithErrorHandling(modulePath) {
+  return import(modulePath).catch((error) => {
+    console.error(`Error importing module ${modulePath}:`, error);
+    // Show must go on, start the game anyway
+  });
+}
+
+export {};
