@@ -7,6 +7,7 @@ await Promise.all([
   importWithErrorHandling("./fly-button.js"), // handles inputChanged, changes gameState.flyButtonPressed
   importWithErrorHandling("./pause-button.js"), // emits paused and unpaused
   importWithErrorHandling("./gameOver.js"), // handles stateChanged when gameState.state is gameOver
+  importWithErrorHandling("./retro-theme.js"), // Applies retro styling and provides a color palette
 
   // Obstacles
 

@@ -69,6 +69,27 @@ export const WORLD_HEIGHT = VIEWPORT_HEIGHT;
 export const TICK_HZ = 200;
 export const TICK_DT_MS = 1000 / TICK_HZ;
 
+/**
+ * Checks if a font is loaded and ready.
+ * @param {string} font The font string (e.g., "20px 'Press Start 2P'").
+ * @param {Document} documentRef Reference to the document object.
+ * @returns {Promise<void>} A promise that resolves when the font is loaded.
+ */
+function ensureFontLoaded(font, documentRef) {
+  return new Promise((resolve, reject) => {
+    function check() {
+      if (documentRef.fonts.check(font)) {
+        resolve();
+      } else {
+        // Font not ready yet, try again on the next frame
+        requestAnimationFrame(check);
+      }
+    }
+    // Start the check
+    requestAnimationFrame(check);
+  });
+}
+
 // --- Helpers ---
 
 /**
@@ -292,6 +313,17 @@ export async function initGame(canvasElement, window) {
   }
   canvas.width = VIEWPORT_WIDTH;
   canvas.height = VIEWPORT_HEIGHT;
+
+  // Ensure required fonts are loaded before proceeding
+  try {
+    // Assuming 'Press Start 2P' is a common font, adjust if more are needed or specific sizes.
+    // The size here is just for the check, modules should specify their own sizes when using the font.
+    await ensureFontLoaded("10px 'Press Start 2P'", window.document);
+    console.log("'Press Start 2P' font loaded.");
+  } catch (error) {
+    console.error("Error ensuring font loaded:", error);
+    // continue anyway
+  }
 
   animationFrameId = requestAnimationFrame(drawLoop);
 

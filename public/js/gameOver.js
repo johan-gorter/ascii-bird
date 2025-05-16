@@ -1,9 +1,9 @@
 import { bus, gameState, VIEWPORT_WIDTH, VIEWPORT_HEIGHT } from './game.js';
+import { RETRO_PALETTE, FONT_FAMILY } from './retro-theme.js';
 
 // Constants for "GAME OVER" text
 const GAME_OVER_TEXT = "GAME OVER";
-const FONT_SIZE_PX = 80;
-const FONT_FAMILY = "monospace"; // Using a common monospace font
+const FONT_SIZE_PX = 48;
 const TEXT_COLOR = "white";
 const INITIAL_Y_OFFSET_BELOW_SCREEN = 50; // How far below the screen the text starts
 const TARGET_Y_POSITION = VIEWPORT_HEIGHT / 2;
@@ -48,7 +48,7 @@ bus.on('drawStaticUI', (evt) => {
 
   // Draw "GAME OVER" text
   ctx.font = `${FONT_SIZE_PX}px ${FONT_FAMILY}`;
-  ctx.fillStyle = TEXT_COLOR;
+  ctx.fillStyle = RETRO_PALETTE.highlightText;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(GAME_OVER_TEXT, VIEWPORT_WIDTH / 2, textCurrentY);

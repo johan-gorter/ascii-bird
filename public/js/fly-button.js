@@ -1,12 +1,15 @@
 import { bus, gameState, VIEWPORT_HEIGHT } from "./game.js";
+import { RETRO_PALETTE } from './retro-theme.js';
 
 const BUTTON_WIDTH = 150;
 const BUTTON_HEIGHT = 50;
 const BUTTON_X = 20;
 const BUTTON_Y = VIEWPORT_HEIGHT - BUTTON_HEIGHT - 20;
-const BORDER_RADIUS = 10;
-const FONT_SIZE = 30;
+const FONT_SIZE = 20;
 const BUTTON_TEXT = "FLY";
+
+let unpressedButtonCanvas;
+let pressedButtonCanvas;
 
 /**
  * Draws a button state onto a given canvas context.
@@ -15,47 +18,65 @@ const BUTTON_TEXT = "FLY";
  * @param {string} textColor The text color.
  */
 function drawButtonState(ctx, backgroundColor, textColor) {
-  // Draw rounded rectangle for button background
+  // Draw square rectangle for button background
   ctx.fillStyle = backgroundColor;
-  ctx.beginPath();
-  ctx.moveTo(BORDER_RADIUS, 0);
-  ctx.lineTo(BUTTON_WIDTH - BORDER_RADIUS, 0);
-  ctx.quadraticCurveTo(BUTTON_WIDTH, 0, BUTTON_WIDTH, BORDER_RADIUS);
-  ctx.lineTo(BUTTON_WIDTH, BUTTON_HEIGHT - BORDER_RADIUS);
-  ctx.quadraticCurveTo(BUTTON_WIDTH, BUTTON_HEIGHT, BUTTON_WIDTH - BORDER_RADIUS, BUTTON_HEIGHT);
-  ctx.lineTo(BORDER_RADIUS, BUTTON_HEIGHT);
-  ctx.quadraticCurveTo(0, BUTTON_HEIGHT, 0, BUTTON_HEIGHT - BORDER_RADIUS);
-  ctx.lineTo(0, BORDER_RADIUS);
-  ctx.quadraticCurveTo(0, 0, BORDER_RADIUS, 0);
-  ctx.closePath();
-  ctx.fill();
+  ctx.fillRect(0, 0, BUTTON_WIDTH, BUTTON_HEIGHT);
 
   // Draw button text
   ctx.fillStyle = textColor;
-  ctx.font = `${FONT_SIZE}px Arial`;
+  ctx.font = `${FONT_SIZE}px 'Press Start 2P'`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(BUTTON_TEXT, BUTTON_WIDTH / 2, BUTTON_HEIGHT / 2);
 }
 
-// Create offscreen canvas for the unpressed button state
-const unpressedButtonCanvas = document.createElement("canvas");
-unpressedButtonCanvas.width = BUTTON_WIDTH;
-unpressedButtonCanvas.height = BUTTON_HEIGHT;
-const unpressedCtx = unpressedButtonCanvas.getContext("2d");
-if (!unpressedCtx) throw new Error("Could not obtain 2D context");
-drawButtonState(unpressedCtx, "grey", "white");
+bus.on('init', (evt) => { // Added evt parameter
+  console.log("Initializing fly button...");
 
-// Create offscreen canvas for the pressed button state
-const pressedButtonCanvas = document.createElement("canvas");
-const pressedCtx = pressedButtonCanvas.getContext("2d");
-if (!pressedCtx) throw new Error("Could not obtain 2D context");
-pressedButtonCanvas.width = BUTTON_WIDTH;
-pressedButtonCanvas.height = BUTTON_HEIGHT;
-drawButtonState(pressedCtx, "darkgrey", "lightgrey");
+  const initPromise = new Promise((resolve, reject) => {
+    try {
+      // Create offscreen canvas for the unpressed button state
+      unpressedButtonCanvas = document.createElement("canvas");
+      unpressedButtonCanvas.width = BUTTON_WIDTH;
+      unpressedButtonCanvas.height = BUTTON_HEIGHT;
+      const unpressedCtx = unpressedButtonCanvas.getContext("2d");
+      if (!unpressedCtx) {
+        const errorMsg = "Could not obtain 2D context for unpressed fly button";
+        console.error(errorMsg);
+        reject(new Error(errorMsg)); // Reject the promise on error
+        return;
+      }
+      drawButtonState(unpressedCtx, RETRO_PALETTE.buttonBg, RETRO_PALETTE.buttonText);
+
+      // Create offscreen canvas for the pressed button state
+      pressedButtonCanvas = document.createElement("canvas");
+      pressedButtonCanvas.width = BUTTON_WIDTH;
+      pressedButtonCanvas.height = BUTTON_HEIGHT;
+      const pressedCtx = pressedButtonCanvas.getContext("2d");
+      if (!pressedCtx) {
+        const errorMsg = "Could not obtain 2D context for pressed fly button";
+        console.error(errorMsg);
+        reject(new Error(errorMsg)); // Reject the promise on error
+        return;
+      }
+      drawButtonState(pressedCtx, RETRO_PALETTE.buttonHoverBg, RETRO_PALETTE.buttonText);
+      resolve(undefined); // Resolve the promise when drawing is done
+    } catch (error) {
+      console.error("Error during fly button canvas initialization:", error);
+      reject(error); // Reject on any other error
+    }
+  });
+
+  evt.waitFor(initPromise); // Use the waitFor method from the InitEvent
+});
 
 bus.on("drawStaticUI", (evt) => {
   const { ctx } = evt;
+
+  // If canvases are not ready (e.g. font loading failed or init not complete), don't draw
+  if (!unpressedButtonCanvas || !pressedButtonCanvas) {
+    return;
+  }
 
   if (gameState.flyButtonPressed) {
     ctx.drawImage(pressedButtonCanvas, BUTTON_X, BUTTON_Y);
