@@ -1,5 +1,5 @@
 import { bus, gameState, VIEWPORT_HEIGHT } from "./game.js";
-import { RETRO_PALETTE } from './retro-theme.js';
+import { PALETTE } from './theme.js';
 
 const BUTTON_WIDTH = 150;
 const BUTTON_HEIGHT = 50;
@@ -46,7 +46,7 @@ bus.on('init', (evt) => { // Added evt parameter
         reject(new Error(errorMsg)); // Reject the promise on error
         return;
       }
-      drawButtonState(unpressedCtx, RETRO_PALETTE.buttonBg, RETRO_PALETTE.buttonText);
+      drawButtonState(unpressedCtx, PALETTE.buttonBg, PALETTE.buttonText);
 
       // Create offscreen canvas for the pressed button state
       pressedButtonCanvas = document.createElement("canvas");
@@ -59,7 +59,7 @@ bus.on('init', (evt) => { // Added evt parameter
         reject(new Error(errorMsg)); // Reject the promise on error
         return;
       }
-      drawButtonState(pressedCtx, RETRO_PALETTE.buttonHoverBg, RETRO_PALETTE.buttonText);
+      drawButtonState(pressedCtx, PALETTE.buttonHoverBg, PALETTE.buttonText);
       resolve(undefined); // Resolve the promise when drawing is done
     } catch (error) {
       console.error("Error during fly button canvas initialization:", error);

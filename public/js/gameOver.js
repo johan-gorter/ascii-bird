@@ -1,5 +1,5 @@
 import { bus, gameState, VIEWPORT_WIDTH, VIEWPORT_HEIGHT } from './game.js';
-import { RETRO_PALETTE, FONT_FAMILY } from './retro-theme.js';
+import { PALETTE, FONT_FAMILY } from './theme.js';
 
 // Constants for "GAME OVER" text
 const GAME_OVER_TEXT = "GAME OVER";
@@ -48,7 +48,7 @@ bus.on('drawStaticUI', (evt) => {
 
   // Draw "GAME OVER" text
   ctx.font = `${FONT_SIZE_PX}px ${FONT_FAMILY}`;
-  ctx.fillStyle = RETRO_PALETTE.highlightText;
+  ctx.fillStyle = PALETTE.highlightText;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(GAME_OVER_TEXT, VIEWPORT_WIDTH / 2, textCurrentY);

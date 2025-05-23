@@ -4,10 +4,10 @@ await Promise.all([
   importWithErrorHandling("./game-manager.js"), // handles paused, unpaused and collisionDetected events, emits gameOver
 
   // UI modules
-  importWithErrorHandling("./fly-button.js"), // handles inputChanged, changes gameState.flyButtonPressed
-  importWithErrorHandling("./pause-button.js"), // emits paused and unpaused
+  importWithErrorHandling("./fly-button.js"), // handles inputChanged, changes gameState.flyButtonPressed. Draws a fly button at bottom-left corner 150px wide, 75 pixels high.
+  importWithErrorHandling("./pause-button.js"), // emits paused and unpaused, draws a pause button at top-right corner 50px wide.
   importWithErrorHandling("./gameOver.js"), // handles stateChanged when gameState.state is gameOver
-  importWithErrorHandling("./retro-theme.js"), // Applies retro styling and provides a color palette
+  importWithErrorHandling("./theme.js"), // Applies styling and provides a color palette, draws UI elements.
 
   // Obstacles
 

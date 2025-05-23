@@ -100,14 +100,14 @@ function ensureFontLoaded(font, documentRef) {
  */
 function charToCanvas(char, sizePx) {
   const canvas = document.createElement("canvas");
-  canvas.width = sizePx;
-  canvas.height = sizePx;
+  canvas.width = sizePx + 4;
+  canvas.height = sizePx + 4;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Could not get 2D context");
   ctx.font = `${sizePx}px sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(char, sizePx / 2, sizePx / 2);
+  ctx.fillText(char, sizePx / 2 + 2, sizePx / 2 + 2);
   return canvas;
 }
 
