@@ -244,10 +244,13 @@ class BasicSegmentBuilder {
 function gameTick() {
   // Generate new world segments if needed
   const viewportEndX = gameState.viewportX + VIEWPORT_WIDTH;
-  if (viewportEndX > worldGeneratedUpToX - SEGMENT_WIDTH) {
-    // Start generating next segment when viewport is one segment away from the end
+  if (viewportEndX > worldGeneratedUpToX - 100) {
+    // Start generating next segment when viewport is one 100px away from the end
     const segmentStartX = worldGeneratedUpToX;
     const segmentEndX = segmentStartX + SEGMENT_WIDTH;
+    console.log(
+      `Generating new segment from ${segmentStartX} to ${segmentEndX}, viewportX: ${gameState.viewportX}`
+    );
     const builder = new BasicSegmentBuilder(segmentStartX);
 
     bus.emit({
