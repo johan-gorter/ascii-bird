@@ -14,3 +14,10 @@ AB stands for "Abstractionless Bus" (and also "ASCII Bird"). The idea behind it 
 ## Error handling
 To make vibe coding easier we continue on most errors. Just log the error to the console.
 When we add unit-testing, the test runner will monitor console errors and fail the test.
+
+## Notices
+This software is released under the Unlicense. For more details, please refer
+to the LICENSE file in the root directory of this project.
+
+Artwork and other assets located in the `public/assets` folder are subject
+to their own licenses and are attributed accordingly in the `CREDITS.md` file.
