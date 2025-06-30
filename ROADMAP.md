@@ -7,3 +7,18 @@ Roadmap:
 - Investigate assets
 
 - conform to more AI-opinionated standards (indent by 4 spaces, camelCase files)
+
+## Ideas/themes
+- Zoo
+- Space
+- Farm
+- City
+- Forest
+- Desert
+- Underwater
+- Jungle
+- Castle
+- Mountain
+- Pirate
+- Africa
+- Medieval
