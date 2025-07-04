@@ -117,14 +117,21 @@ function charToCanvas(char, sizePx) {
  * @returns {HitMap}
  */
 function canvasToHitMap(canvas) {
-  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  const ctx = canvas.getContext("2d", { 
+    willReadFrequently: true,
+    alpha: false // Optimization hint for Firefox
+  });
   if (!ctx) throw new Error("Could not get 2D context");
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   const data = new Uint8Array(canvas.width * canvas.height);
-  for (let i = 0; i < imageData.data.length; i += 4) {
-    // Check alpha channel (index 3)
-    data[i / 4] = imageData.data[i + 3] > 128 ? 1 : 0;
+  
+  // Optimized loop for Firefox
+  const pixelData = imageData.data;
+  for (let i = 0, j = 0; i < pixelData.length; i += 4, j++) {
+    // Check alpha channel (index 3) - unrolled for better performance
+    data[j] = pixelData[i + 3] > 128 ? 1 : 0;
   }
+  
   return {
     width: canvas.width,
     height: canvas.height,
@@ -154,15 +161,25 @@ function detectCollision(a, b) {
   const startY = Math.max(a.y, b.y);
   const endY = Math.min(a.y + a.hitMap.height, b.y + b.hitMap.height);
 
+  // Cache frequently accessed properties
+  const aData = a.hitMap.data;
+  const bData = b.hitMap.data;
+  const aWidth = a.hitMap.width;
+  const bWidth = b.hitMap.width;
+  const aX = a.x;
+  const aY = a.y;
+  const bX = b.x;
+  const bY = b.y;
+
   for (let y = startY; y < endY; y++) {
     for (let x = startX; x < endX; x++) {
       // Calculate indices in the respective hitmap data arrays
-      const indexA = (y - a.y) * a.hitMap.width + (x - a.x);
-      const indexB = (y - b.y) * b.hitMap.width + (x - b.x);
+      const indexA = (y - aY) * aWidth + (x - aX);
+      const indexB = (y - bY) * bWidth + (x - bX);
 
       // Check if both pixels are 'solid' (non-transparent)
-      if (a.hitMap.data[indexA] === 1 && b.hitMap.data[indexB] === 1) {
-        return true; // Collision detected
+      if (aData[indexA] === 1 && bData[indexB] === 1) {
+        return true; // Collision detected - early exit
       }
     }
   }
@@ -310,12 +327,20 @@ function drawLoop() {
  */
 export async function initGame(canvasElement, window) {
   canvas = canvasElement;
-  ctx = canvas.getContext("2d");
+  ctx = canvas.getContext("2d", {
+    alpha: false, // Disable alpha channel for better performance
+    desynchronized: true // Allow desynchronized rendering for smoother performance
+  });
   if (!ctx) {
     throw new Error("Could not get 2D rendering context");
   }
   canvas.width = VIEWPORT_WIDTH;
   canvas.height = VIEWPORT_HEIGHT;
+
+  // Firefox-specific optimizations
+  if (ctx.imageSmoothingEnabled !== undefined) {
+    ctx.imageSmoothingEnabled = false; // Disable anti-aliasing for pixel art
+  }
 
   // Ensure required fonts are loaded before proceeding
   try {

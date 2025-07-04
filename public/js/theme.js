@@ -41,7 +41,6 @@ bus.on('drawBackground', (evt) => {
 
 // Draw scrolling grass foreground
 bus.on('drawStaticUI', (evt) => {
-  console.log('drawStaticUI');
   if (grassImage) {
     const { ctx } = evt;
     const grassY = WORLD_HEIGHT - GRASS_HEIGHT;
