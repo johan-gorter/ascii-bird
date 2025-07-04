@@ -8,6 +8,7 @@ await Promise.all([
   importWithErrorHandling("./pause-button.js"), // emits paused and unpaused, draws a pause button at top-right corner 50px wide.
   importWithErrorHandling("./gameOver.js"), // handles stateChanged when gameState.state is gameOver
   importWithErrorHandling("./theme.js"), // Applies styling and provides a color palette, draws UI elements.
+  importWithErrorHandling("./background.js"), // Handles static sky background and scrolling grass foreground
 
   // Obstacles
 

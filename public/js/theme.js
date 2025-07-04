@@ -22,21 +22,3 @@ bus.on('drawBackground', (evt) => {
   evt.ctx.fillStyle = PALETTE.background;
   evt.ctx.fillRect(0, 0, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
 });
-
-// Draw scanlines
-bus.on('drawStaticUI', (evt) => {
-  // Delay so we draw on top of everything else
-  queueMicrotask(() => {
-    const { ctx } = evt;
-
-    // Scanlines
-    ctx.strokeStyle = PALETTE.scanline;
-    ctx.lineWidth = 1;
-    for (let y = 0; y < VIEWPORT_HEIGHT; y += 3) { // Adjust spacing (3px) for effect
-      ctx.beginPath();
-      ctx.moveTo(0, y + 0.5); // Use +0.5 for sharper lines
-      ctx.lineTo(VIEWPORT_WIDTH, y + 0.5);
-      ctx.stroke();
-    }
-  });
-});
