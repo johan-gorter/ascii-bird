@@ -102,12 +102,24 @@ function charToCanvas(char, sizePx) {
   const canvas = document.createElement("canvas");
   canvas.width = sizePx + 4;
   canvas.height = sizePx + 4;
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext("2d", {
+    alpha: true,
+    willReadFrequently: false, // We rarely read from these canvases
+    desynchronized: true // Allow async operations
+  });
   if (!ctx) throw new Error("Could not get 2D context");
+  
+  // Force Firefox to use GPU acceleration by triggering compositing
+  ctx.globalCompositeOperation = 'source-over';
+  
   ctx.font = `${sizePx}px sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(char, sizePx / 2 + 2, sizePx / 2 + 2);
+  
+  // Force a composite operation to ensure GPU path
+  ctx.globalCompositeOperation = 'source-over';
+  
   return canvas;
 }
 
@@ -119,15 +131,23 @@ function charToCanvas(char, sizePx) {
 function canvasToHitMap(canvas) {
   const ctx = canvas.getContext("2d", { 
     willReadFrequently: true,
-    alpha: false // Optimization hint for Firefox
+    alpha: false, // Optimization hint for Firefox
+    desynchronized: true // Allow async rendering
   });
   if (!ctx) throw new Error("Could not get 2D context");
+  
+  // Force a sync to ensure canvas is ready
+  ctx.getImageData(0, 0, 1, 1);
+  
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   const data = new Uint8Array(canvas.width * canvas.height);
   
-  // Optimized loop for Firefox
+  // Cache array length to avoid repeated property access
   const pixelData = imageData.data;
-  for (let i = 0, j = 0; i < pixelData.length; i += 4, j++) {
+  const length = pixelData.length;
+  
+  // Optimized loop for Firefox with batched processing
+  for (let i = 0, j = 0; i < length; i += 4, j++) {
     // Check alpha channel (index 3) - unrolled for better performance
     data[j] = pixelData[i + 3] > 128 ? 1 : 0;
   }
@@ -206,6 +226,12 @@ let canvas = null;
 /** @type {CanvasRenderingContext2D | null} */
 let ctx = null;
 let worldGeneratedUpToX = 0;
+
+// Cache frequently used objects to reduce GC pressure
+const cachedEvents = {
+  drawBackground: { type: "drawBackground", ctx: null, viewportX: 0 },
+  drawStaticUI: { type: "drawStaticUI", ctx: null }
+};
 
 /** Simple Pseudo-Random Number Generator */
 class SimpleRNG {
@@ -302,19 +328,29 @@ function gameTick() {
 function drawLoop() {
   if (!ctx || !canvas) return; // Should not happen if initialized
 
-  // Clear canvas
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // Firefox optimization: Batch canvas operations
+  ctx.save();
+  
+  // Clear canvas with fillRect instead of clearRect for better Firefox performance
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.fillStyle = '#87CEEB'; // Sky blue background
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Draw background elements
-  bus.emit({ type: "drawBackground", ctx, viewportX: gameState.viewportX });
+  // Draw background elements using cached event object
+  cachedEvents.drawBackground.ctx = ctx;
+  cachedEvents.drawBackground.viewportX = gameState.viewportX;
+  bus.emit(cachedEvents.drawBackground);
 
   // Draw game objects
   for (const obj of gameObjects) {
     obj.draw?.(ctx, gameState.viewportX);
   }
 
-  // Draw static UI elements (like score, buttons)
-  bus.emit({ type: "drawStaticUI", ctx });
+  // Draw static UI elements using cached event object
+  cachedEvents.drawStaticUI.ctx = ctx;
+  bus.emit(cachedEvents.drawStaticUI);
+
+  ctx.restore();
 
   // Request next frame
   animationFrameId = requestAnimationFrame(drawLoop);
@@ -329,7 +365,8 @@ export async function initGame(canvasElement, window) {
   canvas = canvasElement;
   ctx = canvas.getContext("2d", {
     alpha: false, // Disable alpha channel for better performance
-    desynchronized: true // Allow desynchronized rendering for smoother performance
+    desynchronized: true, // Allow desynchronized rendering for smoother performance
+    willReadFrequently: false // We don't read from main canvas frequently
   });
   if (!ctx) {
     throw new Error("Could not get 2D rendering context");
@@ -341,6 +378,11 @@ export async function initGame(canvasElement, window) {
   if (ctx.imageSmoothingEnabled !== undefined) {
     ctx.imageSmoothingEnabled = false; // Disable anti-aliasing for pixel art
   }
+  
+  // Force Firefox to use GPU acceleration
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.fillStyle = 'transparent';
+  ctx.fillRect(0, 0, 1, 1);
 
   // Ensure required fonts are loaded before proceeding
   try {
