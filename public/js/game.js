@@ -328,10 +328,6 @@ export async function initGame(canvasElement, window) {
     // continue anyway
   }
 
-  animationFrameId = requestAnimationFrame(drawLoop);
-
-  console.log("Game initialized and loops started.");
-
   // Emit init event and allow modules to perform async setup
   const initPromises = [];
   bus.emit({
@@ -351,6 +347,10 @@ export async function initGame(canvasElement, window) {
       console.error("Error during init:", error);
       alert("Initialization error: " + error.message);
     });
+
+  animationFrameId = requestAnimationFrame(drawLoop);
+
+  console.log("Game initialized and loops started.");
 
   bus.on("stateChanged", (evt) => {
     if (

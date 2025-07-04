@@ -1,24 +1,61 @@
-import { bus, VIEWPORT_WIDTH, VIEWPORT_HEIGHT } from './game.js';
-
-// The Theme is now set to a retro style, with a dark background and bright colors.
-// This can be changed when requested.
+import { bus, VIEWPORT_WIDTH, VIEWPORT_HEIGHT, WORLD_HEIGHT } from './game.js';
+import { gameState } from './game.js'
 
 export const PALETTE = {
-  background: '#1A1A2E', // Dark_blueish-purple
-  primaryText: '#E0E0E0', // Off-white for general text
-  highlightText: '#FFFF00', // Bright yellow for "GAME OVER", scores
-  accent1: '#00FFFF',     // Cyan
-  accent2: '#FF00FF',     // Magenta
-  scanline: 'rgba(0, 0, 0, 0.25)', // Subtle dark scanlines
-  buttonBg: '#4A4A70',     // Muted purple for buttons
+  highlightText: '#FFFF00', // Bright yellow for scores, "GAME OVER", etc
+  buttonBg: '#4A90E2',     // Blue for buttons, matches emoji buttons
   buttonText: '#E0E0E0',   // Off-white for button text
-  buttonHoverBg: '#6A6A90', // Lighter purple for button hover
 };
 
 export const FONT_FAMILY = "'Press Start 2P'"; // Use loaded pixel font
 
-// Apply the background color
+let skyImage = null;
+let grassImage = null;
+const GRASS_HEIGHT = 20;
+
+bus.on('init', (evt) => {
+  // Load background images
+  const loadSky = new Promise((resolve, reject) => {
+    skyImage = new Image();
+    skyImage.onload = resolve;
+    skyImage.onerror = reject;
+    skyImage.src = './svg/sky-background.svg';
+  });
+
+  const loadGrass = new Promise((resolve, reject) => {
+    grassImage = new Image();
+    grassImage.onload = resolve;
+    grassImage.onerror = reject;
+    grassImage.src = './svg/grass-foreground.svg';
+  });
+
+  evt.waitFor(Promise.all([loadSky, loadGrass]));
+});
+
+// Draw static sky background
 bus.on('drawBackground', (evt) => {
-  evt.ctx.fillStyle = PALETTE.background;
-  evt.ctx.fillRect(0, 0, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
+  if (skyImage) {
+    evt.ctx.drawImage(skyImage, 0, 0, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
+  }
+});
+
+// Draw scrolling grass foreground
+bus.on('drawStaticUI', (evt) => {
+  console.log('drawStaticUI');
+  if (grassImage) {
+    const { ctx } = evt;
+    const grassY = WORLD_HEIGHT - GRASS_HEIGHT;
+    const grassWidth = 100;
+    
+    // Calculate how much to offset the grass pattern for scrolling
+    const scrollOffset = gameState.viewportX % grassWidth;
+    
+    // Draw grass tiles across the viewport width
+    const tilesNeeded = Math.ceil((VIEWPORT_WIDTH + grassWidth) / grassWidth);
+    
+    for (let i = 0; i < tilesNeeded; i++) {
+      const x = (i * grassWidth) - scrollOffset;
+      ctx.drawImage(grassImage, x, grassY, grassWidth, GRASS_HEIGHT);
+    }
+  }
 });

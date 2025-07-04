@@ -2,9 +2,9 @@ Ascii bird is meant to be a demonstration of how far people without programming 
 
 Roadmap:
 
-- Make it work
+- More common bird physics
 - Reload when regaining focus, preserving state
-- Investigate assets
+- display console error messages on screen
 
 - conform to more AI-opinionated standards (indent by 4 spaces, camelCase files)
 
